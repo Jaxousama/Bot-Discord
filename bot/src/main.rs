@@ -1,4 +1,5 @@
 use std::env;
+use std::sync::{LazyLock};
 
 use serenity::async_trait;
 use serenity::model::channel::Message;
@@ -6,7 +7,7 @@ use serenity::prelude::*;
 
 struct Handler;
 
-const VEC_MIAM: Vec<String> = Vec::new();
+static  VEC_MIAM: LazyLock<Mutex<Vec<String>>> = LazyLock::new(|| Mutex::new(Vec::new()));
 
 #[async_trait]
 impl EventHandler for Handler {
@@ -14,6 +15,41 @@ impl EventHandler for Handler {
         if msg.content == "!manger" {
             if let Err(why) = msg.channel_id.say(&ctx.http, "Hello").await {
                 println!("Error sending message: {why:?}");
+            }
+        }
+
+        if msg.content == "!addmanger" {
+            let list_msg: Vec<&str>= msg.content.split(' ').collect();
+            if list_msg.len() < 2{
+                if let Err(why) = msg.channel_id.say(&ctx.http, "Need at least 2 args").await {
+                    println!("Error sending message: {why:?}");
+                }
+                return ;
+            }
+            let foodname = list_msg.as_slice()[1..list_msg.len()].join("' '");
+            let mut guard = VEC_MIAM.lock().await;
+            guard.push(foodname);
+            drop(guard);
+        }
+
+        if msg.content == "!removemanger"{
+            let list_msg: Vec<&str>= msg.content.split(' ').collect();
+            if list_msg.len() < 2{
+                if let Err(why) = msg.channel_id.say(&ctx.http, "Need at least 2 args").await {
+                    println!("Error sending message: {why:?}");
+                }
+                return ;
+            }
+            let foodname = list_msg.as_slice()[1..list_msg.len()].join("' '");
+            let mut guard = VEC_MIAM.lock().await;
+            guard.retain(|name| !name.eq(&foodname));
+            drop(guard);
+        }
+
+        if msg.content == "!seemanger"{
+            let guard = VEC_MIAM.lock().await;
+            if let Err(why) = msg.channel_id.say(&ctx.http, format!("{:?}",guard)).await {
+                    println!("Error sending message: {why:?}");
             }
         }
     }
