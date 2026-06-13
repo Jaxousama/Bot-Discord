@@ -28,6 +28,7 @@ impl EventHandler for Handler {
             }
             let foodname = list_msg.as_slice()[1..list_msg.len()].join("' '");
             let mut guard = VEC_MIAM.lock().await;
+            println!("add in list");
             guard.push(foodname);
             drop(guard);
         }
